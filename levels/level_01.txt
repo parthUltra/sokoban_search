@@ -1,5 +1,7 @@
 wwwwwww
 w     w
-w  bpxw
+w  b  w
 w     w
 wwwwwww
+5,2
+4,2

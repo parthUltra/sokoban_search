@@ -1,0 +1,13 @@
+[project]
+name = "sokoban-search"
+version = "0.1.0"
+description = "Searching through the state space of Sokoban"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pynput>=1.7.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

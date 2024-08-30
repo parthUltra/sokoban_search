@@ -1,0 +1,8 @@
+the first lines should be the grid, e.g:
+wwwwwww
+w     w
+w  b  w
+w     w
+wwwwwww
+the line after the grid should be the hero position as x,y. e.g: 5,2
+the last line should be space separated x,y coordinates of goals, e.g: 4,2
