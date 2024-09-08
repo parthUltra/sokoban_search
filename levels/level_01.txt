@@ -1,7 +1,6 @@
-wwwwwww
-w     w
-w  b  w
-w     w
-wwwwwww
-5,2
-4,2
+  XXX    
+XXX  XXXX
+X     * X
+X X  X* X
+X . .X@ X
+XXXXXXXXX
