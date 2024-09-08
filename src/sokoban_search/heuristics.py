@@ -70,7 +70,7 @@ def sum_manhattan_hero_reward(
     for box in boxes:
         h += sum((_manhattan(box, goal) for goal in goals), 0)
         h += _manhattan(state.hero, box)
-    h -= sum(5 for (j, i) in goals if state.grid[i][j] == Occupant.BLOCK)
+    h += sum(5 for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
 
     return h
 
@@ -83,6 +83,7 @@ def min_manhattan_hero_reward(
     for box in boxes:
         h += min((_manhattan(box, goal) for goal in goals), default=0)
         h += _manhattan(state.hero, box)
-    h -= sum(5 for (j, i) in goals if state.grid[i][j] == Occupant.BLOCK)
+
+    h += sum(5 for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
 
     return h
