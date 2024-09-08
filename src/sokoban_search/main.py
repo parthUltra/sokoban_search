@@ -1,6 +1,7 @@
 """
 Sokoban State Space Search CLI
 """
+
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import List
@@ -79,11 +80,19 @@ def get_parser() -> ArgumentParser:
         metavar="EXCL",
         default=[],
     )
+    bench_parser.add_argument(
+        "--iterations",
+        "-i",
+        type=int,
+        default=5,
+        help="run each algorithm N times",
+        metavar="N",
+    )
 
     return main_parser
 
 
-def benchmark(sokoban: Sokoban, excl: List[str]):
+def benchmark(sokoban: Sokoban, excl: List[str], n: int = 5):
     sokoban.print()
 
     print()
@@ -93,8 +102,10 @@ def benchmark(sokoban: Sokoban, excl: List[str]):
             continue
 
         start_time = time_ns()
+        for _ in range(n - 1):
+            states = fn()
         states = fn()
-        time_taken = time_ns() - start_time
+        time_taken = (time_ns() - start_time) / n
 
         print(f"{algo:<8}\tSteps: {len(states) - 1}\tTime: {time_taken / 10**9:.4f}s")
 
@@ -120,7 +131,7 @@ def main():
         return
 
     if args.action == "bench":
-        benchmark(sokoban, args.exclude)
+        benchmark(sokoban, args.exclude, args.iterations)
         return
 
     # sim
