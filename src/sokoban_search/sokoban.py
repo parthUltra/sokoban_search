@@ -1,6 +1,7 @@
 """
 Sokoban State Space Search Implementation
 """
+
 from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass
