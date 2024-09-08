@@ -1,27 +1,29 @@
+"""
+Sokoban State Space Search Implementation
+"""
+from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass
-from collections import deque
 from enum import Enum
 from pathlib import Path
-from typing import Deque, Dict, Iterable, List, Self, Tuple
+from typing import Callable, Deque, Dict, Iterable, List, Self, Tuple
 
 import pynput.keyboard as kb
 
 # x, y coordinates of a hero / goal
 Position = Tuple[int, int]
 
-
 """
 Display representations of different grid occupants and states.
 """
 DISPLAY_CHARS: Dict[str, str] = {
     " ": "  ",
-    "H": "🧍",
+    "H": "😀",
     "W": "🧱",
-    "G": "⭐",
-    "B": "📦",
-    "GB": "❎",
-    "GH": "🧔",
+    "G": "❌",
+    "B": "⭐",
+    "GB": "🌟",
+    "GH": "😡",
 }
 
 
@@ -124,6 +126,14 @@ class SokobanState:
                 pass
 
         return new_state
+
+    def box_positions(self) -> List[Position]:
+        boxes = []
+        for i, row in enumerate(self.grid):
+            for j, val in enumerate(row):
+                if val == Occupant.BLOCK:
+                    boxes.append((i, j))
+        return boxes
 
 
 # A pair of nodes (child, parent)
@@ -253,13 +263,23 @@ class Sokoban:
 
         return states
 
-    def bfs(self) -> List[SokobanState]:
+    def bfs(self, print_depth_info: bool = False) -> List[SokobanState]:
+        """
+        Perform breadth first search on the current sokoban puzzle.
+
+        ### Parameters
+        print_depth_info (bool): if True, print the depth and number of nodes in open at each depth
+
+        ### Returns
+        List[SokobanState]: A list of states from the start state to the goal state
+        """
         open: Deque[StatePair] = deque([(self.state, None)])
         closed = []
 
         lvl = 0
         while open:
-            print(f"depth: {lvl}\tnodes in open: {len(open)}")
+            if print_depth_info:
+                print(f"depth: {lvl}\tnodes in open: {len(open)}")
             for _ in range(len(open)):
                 node_pair = open.popleft()
                 (state, _) = node_pair
@@ -274,6 +294,12 @@ class Sokoban:
         return []
 
     def dfs(self) -> List[SokobanState]:
+        """
+        Perform depth first search on the current sokoban puzzle.
+
+        ### Returns
+        List[SokobanState]: A list of states from the start state to the goal state
+        """
         open: List[StatePair] = [(self.state, None)]
         closed = []
 
@@ -287,6 +313,37 @@ class Sokoban:
             new_nodes = Sokoban.remove_seen(children, open, closed)
             new_pairs = Sokoban.make_pairs(new_nodes, state)
             open.extend(new_pairs)
+
+        return []
+
+    def best_fs(
+        self,
+        heuristic: Callable[[List[Position], SokobanState], int],
+    ) -> List[SokobanState]:
+        """
+        Perform best first search on the current sokoban puzzle.
+
+        ### Parameters
+        heuristic (Callable[[List[Position], SokobanState], int]): a heuristic function that takes a list
+            of goals and a state and returns an int
+
+        ### Returns
+        List[SokobanState]: A list of states from the start state to the goal state
+        """
+        open: List[StatePair] = [(self.state, None)]
+        closed = []
+
+        while open:
+            node_pair = open.pop()
+            (state, _) = node_pair
+            if self.goal_test(state):
+                return Sokoban.reconstruct_path(node_pair, closed)
+            closed.append(node_pair)
+            children = self.move_gen(state)
+            new_nodes = Sokoban.remove_seen(children, open, closed)
+            new_pairs = Sokoban.make_pairs(new_nodes, state)
+            open.extend(new_pairs)
+            open.sort(key=lambda x: heuristic(self.goals, x[0]), reverse=True)
 
         return []
 
@@ -310,7 +367,9 @@ class Sokoban:
         return False
 
     @staticmethod
-    def make_pairs(node_list: List[SokobanState], node: SokobanState) -> List[StatePair]:
+    def make_pairs(
+        node_list: List[SokobanState], node: SokobanState
+    ) -> List[StatePair]:
         return [(n, node) for n in node_list]
 
     @staticmethod
@@ -388,6 +447,9 @@ class Sokoban:
                     case "@":
                         hero = (j, i)
                         grid[i][j] = " "
+                    case "#":
+                        hero = (j, i)
+                        grid[i][j] = "B"
                     case ".":
                         grid[i][j] = " "
                         goals.append((j, i))
