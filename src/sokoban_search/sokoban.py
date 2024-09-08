@@ -1,8 +1,9 @@
 from copy import deepcopy
 from dataclasses import dataclass
+from collections import deque
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Self, Tuple
+from typing import Deque, Dict, Iterable, List, Self, Tuple
 
 import pynput.keyboard as kb
 
@@ -29,6 +30,7 @@ class Occupant(Enum):
     Possible occupant's of the Sokoban grid.
     The Hero is not included as it is stored separately.
     """
+
     EMPTY = " "
     BLOCK = "B"
     WALL = "W"
@@ -38,6 +40,7 @@ class Direction(Enum):
     """
     Direction in which the hero can move.
     """
+
     UP = (0, -1)
     DOWN = (0, 1)
     LEFT = (-1, 0)
@@ -52,6 +55,7 @@ class SokobanState:
     ### Fields:
     grid (List[List[Occupant]]): A matrix of Occupants (WALL, BLOCK, EMPTY)
     """
+
     grid: List[List[Occupant]]
     hero: Position
 
@@ -122,10 +126,15 @@ class SokobanState:
         return new_state
 
 
+# A pair of nodes (child, parent)
+StatePair = Tuple[SokobanState, SokobanState | None]
+
+
 class Sokoban:
     """
     The main Sokoban class which handles most of the game logic and the state space search.
     """
+
     def __init__(self, state: SokobanState, goals: List[Position]):
         """
         ### Parameters
@@ -244,6 +253,88 @@ class Sokoban:
 
         return states
 
+    def bfs(self) -> List[SokobanState]:
+        open: Deque[StatePair] = deque([(self.state, None)])
+        closed = []
+
+        lvl = 0
+        while open:
+            print(f"depth: {lvl}\tnodes in open: {len(open)}")
+            for _ in range(len(open)):
+                node_pair = open.popleft()
+                (state, _) = node_pair
+                if self.goal_test(state):
+                    return Sokoban.reconstruct_path(node_pair, closed)
+                closed.append(node_pair)
+                children = self.move_gen(state)
+                new_nodes = Sokoban.remove_seen(children, open, closed)
+                new_pairs = Sokoban.make_pairs(new_nodes, state)
+                open.extend(new_pairs)
+            lvl += 1
+        return []
+
+    def dfs(self) -> List[SokobanState]:
+        open: List[StatePair] = [(self.state, None)]
+        closed = []
+
+        while open:
+            node_pair = open.pop()
+            (state, _) = node_pair
+            if self.goal_test(state):
+                return Sokoban.reconstruct_path(node_pair, closed)
+            closed.append(node_pair)
+            children = self.move_gen(state)
+            new_nodes = Sokoban.remove_seen(children, open, closed)
+            new_pairs = Sokoban.make_pairs(new_nodes, state)
+            open.extend(new_pairs)
+
+        return []
+
+    @staticmethod
+    def remove_seen(
+        node_list: List[SokobanState],
+        open: Iterable[StatePair],
+        closed: Iterable[StatePair],
+    ) -> List[SokobanState]:
+        return [
+            node
+            for node in node_list
+            if not (Sokoban.occurs_in(open, node) or Sokoban.occurs_in(closed, node))
+        ]
+
+    @staticmethod
+    def occurs_in(lst: Iterable[StatePair], node: SokobanState) -> bool:
+        for n, _ in lst:
+            if n == node:
+                return True
+        return False
+
+    @staticmethod
+    def make_pairs(node_list: List[SokobanState], node: SokobanState) -> List[StatePair]:
+        return [(n, node) for n in node_list]
+
+    @staticmethod
+    def reconstruct_path(
+        node_pair: StatePair,
+        closed: List[StatePair],
+    ) -> List[SokobanState]:
+        (node, parent) = node_pair
+        path = [node]
+        while parent is not None:
+            path.append(parent)
+            (_, parent) = Sokoban.find_link(parent, closed)
+        path.reverse()
+        return path
+
+    @staticmethod
+    def find_link(node: SokobanState, closed: List[StatePair]) -> StatePair:
+        for pair in closed:
+            if pair[0] == node:
+                return pair
+
+        # unreachable
+        return (node, None)
+
     @staticmethod
     def _parse_position(pair: str) -> Position:
         [x, y] = pair.split(",")
@@ -254,13 +345,14 @@ class Sokoban:
         return [Sokoban._parse_position(pair) for pair in line.split()]
 
     @classmethod
-    def from_file(cls, filepath: Path) -> Self:
+    def from_file(cls, filepath: Path, is_alt: bool = False) -> Self:
         """
         Parse a Sokoban puzzle from a file.
 
         ### Parameters
         filepath (Path): The path to the puzzle file
-        
+        is_alt (bool): If the file uses alternate format instead of the one we use
+
         ### Returns
         Sokoban: The parsed sokoban puzzle
         """
@@ -270,9 +362,41 @@ class Sokoban:
         with open(filepath, "r") as f:
             raw_data = f.read().splitlines()
 
+        if is_alt:
+            return cls._from_alt(raw_data)
+
         hero = Sokoban._parse_position(raw_data.pop())
         goals = Sokoban._parse_goals(raw_data.pop())
         # assuming the grid only has the data for walls and blocks
         grid = [[Occupant(c.upper()) for c in line] for line in raw_data]
 
+        return cls(SokobanState(grid, hero), goals)
+
+    @classmethod
+    def _from_alt(cls, raw_data: List[str]) -> Self:
+        grid = [list(line) for line in raw_data]
+        goals = []
+        hero = (0, 0)
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                match grid[i][j]:
+                    case " ":
+                        continue
+                    case "X":
+                        grid[i][j] = "W"
+                    case "@":
+                        hero = (j, i)
+                        grid[i][j] = " "
+                    case ".":
+                        grid[i][j] = " "
+                        goals.append((j, i))
+                    case "*":
+                        grid[i][j] = "B"
+                    case "+":
+                        grid[i][j] = "B"
+                        goals.append((j, i))
+                    case _:
+                        grid[i][j] = " "
+        grid = [[Occupant(c.upper()) for c in row] for row in grid]
         return cls(SokobanState(grid, hero), goals)
