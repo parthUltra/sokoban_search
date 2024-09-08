@@ -1,0 +1,7 @@
+wwwwwwwwwwww
+w     b    w
+w  b  w  www 
+w        w
+wwwwwwwwww
+10,1 8,3
+5,2
