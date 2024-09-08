@@ -4,7 +4,7 @@ Heuristics for Sokoban State Space Search
 
 from typing import List
 
-from sokoban_search.sokoban import Occupant, Position, SokobanState
+from sokoban import Occupant, Position, SokobanState
 
 
 def _manhattan(a: Position, b: Position) -> int:

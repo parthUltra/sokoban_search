@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 from time import sleep, time_ns
 
-from sokoban_search.heuristics import (
+from heuristics import (
     min_manhattan_hero_reward,
     min_manhattan,
     min_manhattan_hero,
@@ -15,7 +15,7 @@ from sokoban_search.heuristics import (
     sum_manhattan,
     sum_manhattan_hero,
 )
-from sokoban_search.sokoban import Sokoban
+from sokoban import Sokoban
 
 HEURISTICS = {
     "min": min_manhattan,
@@ -40,7 +40,7 @@ def get_parser() -> ArgumentParser:
         help="assume FILE uses alternate representation",
         action="store_false",
     )
-    subparsers = main_parser.add_subparsers(dest="action")
+    subparsers = main_parser.add_subparsers(required=True, dest="action")
 
     _play_parser = subparsers.add_parser("play", help="play a game of sokoban")
 
