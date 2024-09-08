@@ -8,10 +8,10 @@ from typing import List
 from time import sleep, time_ns
 
 from heuristics import (
-    min_manhattan_hero_reward,
+    min_manhattan_hero_penalty,
     min_manhattan,
     min_manhattan_hero,
-    sum_manhattan_hero_reward,
+    sum_manhattan_hero_penalty,
     sum_manhattan,
     sum_manhattan_hero,
 )
@@ -22,8 +22,8 @@ HEURISTICS = {
     "sum": sum_manhattan,
     "sumhero": sum_manhattan_hero,
     "minhero": min_manhattan_hero,
-    "sumhero-": sum_manhattan_hero_reward,
-    "minhero-": min_manhattan_hero_reward,
+    "sumhero-": sum_manhattan_hero_penalty,
+    "minhero-": min_manhattan_hero_penalty,
 }
 
 

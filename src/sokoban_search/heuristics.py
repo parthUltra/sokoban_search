@@ -9,7 +9,7 @@ from sokoban import Occupant, Position, SokobanState
 
 def _manhattan(a: Position, b: Position) -> int:
     """
-    Compute the manhattan distance two positions
+    Computes the manhattan distance two positions.
 
     ### Parameters
     a (Position): Position 1
@@ -25,6 +25,16 @@ def _manhattan(a: Position, b: Position) -> int:
 
 
 def min_manhattan(goals: List[Position], state: SokobanState) -> int:
+    """
+    Computes the sum of the distance between each box and its closest goal tile.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
@@ -34,6 +44,16 @@ def min_manhattan(goals: List[Position], state: SokobanState) -> int:
 
 
 def sum_manhattan(goals: List[Position], state: SokobanState) -> int:
+    """
+    Computes the sum of the distance between each box and each goal tile.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
@@ -43,6 +63,18 @@ def sum_manhattan(goals: List[Position], state: SokobanState) -> int:
 
 
 def sum_manhattan_hero(goals: List[Position], state: SokobanState) -> int:
+    """
+    Computes the sum of the distance between each box and each goal tile and
+    also adds the distance between the current player position and each box to the
+    heuristic.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
@@ -53,6 +85,18 @@ def sum_manhattan_hero(goals: List[Position], state: SokobanState) -> int:
 
 
 def min_manhattan_hero(goals: List[Position], state: SokobanState) -> int:
+    """
+    Computes the sum of the distance between each box and its closest goal tile and
+    also adds the distance between the current player position and each box to the
+    heuristic.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
@@ -62,28 +106,56 @@ def min_manhattan_hero(goals: List[Position], state: SokobanState) -> int:
     return h
 
 
-def sum_manhattan_hero_reward(
-    goals: List[Position], state: SokobanState
+def sum_manhattan_hero_penalty(
+    goals: List[Position], state: SokobanState, penalty: int = 5
 ) -> int:
+    """
+    Computes the sum of the distance between each box and each goal tile and
+    also adds the distance between the current player position and each box to the
+    heuristic.
+    We also add a penalty for each box that is not on a goal tile.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+    penalty (int): penalty for each box that is not on a goal tile
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
         h += sum((_manhattan(box, goal) for goal in goals), 0)
         h += _manhattan(state.hero, box)
-    h += sum(5 for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
+    h += sum(penalty for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
 
     return h
 
 
-def min_manhattan_hero_reward(
-    goals: List[Position], state: SokobanState
+def min_manhattan_hero_penalty(
+    goals: List[Position], state: SokobanState, penalty: int = 5
 ) -> int:
+    """
+    Computes the sum of the distance between each box and its closest goal tile and
+    also adds the distance between the current player position and each box to the
+    heuristic.
+    We also add a penalty for each box that is not on a goal tile.
+
+    ### Parameters
+    goals (List[Position]): the list of goals
+    state (SokobanState): the current state
+    penalty (int): penalty for each box that is not on a goal tile
+
+    ### Returns
+    int: the heuristic
+    """
     boxes = state.box_positions()
     h = 0
     for box in boxes:
         h += min((_manhattan(box, goal) for goal in goals), default=0)
         h += _manhattan(state.hero, box)
 
-    h += sum(5 for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
+    h += sum(penalty for (j, i) in goals if state.grid[i][j] != Occupant.BLOCK)
 
     return h
